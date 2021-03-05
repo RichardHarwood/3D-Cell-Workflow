@@ -117,7 +117,7 @@ p.add_mesh(CHLstl, color="green", opacity=1)
 p.window_size = 500, 500
 p.show(screenshot=sample+"   Image1.tiff", window_size=[2400,2400])
 ```
-
+![](content/D1_C1_chl.gif)
 
 Now we do the same for the mitochondria 
 ```python 
@@ -142,3 +142,219 @@ p.window_size = 400, 400
 p.show(screenshot=sample+"   Image2.tiff", window_size=[2400,2400])
 ```
 ![](content/D1_C1_MIT.gif)
+
+Because later I am going to get distance metrics for multiple things in regards to mitochdnria (the distance data is added to the array) I create some duplicates 
+
+```python 
+MITstl1=MITstl
+MITstl2=MITstl
+MITstl3=MITstl
+```
+I made the airspace by blocking the cell and adjacent cells and expanding the cells but I made it too thin to make an STL after the image reduction. So instead of going back to Avizo I just make the line a little thicker. That is, I dilate it a few times
+
+```python 
+aird=air
+aird=ndimage.binary_dilation(aird).astype(aird.dtype)
+aird=ndimage.binary_dilation(aird).astype(aird.dtype)
+aird=ndimage.binary_dilation(aird).astype(aird.dtype)
+plt.imshow(aird[60])
+
+vertices, faces, normals, values = marching_cubes_lewiner(aird, level=None, spacing=(Z, X,Y)
+                                                          , gradient_direction='descent', step_size=1, allow_degenerate=True,
+                                                          use_classic=False) 
+airmesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+for i, f in enumerate(faces):
+    for j in range(3):
+        airmesh .vectors[i][j] = vertices[f[j],:]
+```
+airmesh.save(sample +'air3D.stl')
+AIRstl = pv.read(output+sample +"air3D.stl")
+
+```python 
+pv.set_plot_theme("document")
+p = pv.Plotter()
+p.add_mesh(AIRstl, color="blue", opacity=1)
+p.window_size = 500, 500
+p.show(screenshot=sample+"   Image3.tiff", window_size=[2400,2400])
+```
+![](content/D1_C1_air.gif)
+
+Now I create the adjacent cells
+
+```python 
+vertices, faces, normals, values = marching_cubes_lewiner(adj, level=None, spacing=(Z, X,Y)
+                                                          , gradient_direction='descent', step_size=1, allow_degenerate=True,
+                                                          use_classic=False) 
+adjmesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+for i, f in enumerate(faces):
+    for j in range(3):
+        adjmesh .vectors[i][j] = vertices[f[j],:]
+```
+```python 
+adjmesh.save(sample +'adj3D.stl')
+ADJstl = pv.read(output+sample +"adj3D.stl")
+```
+```python 
+pv.set_plot_theme("document")
+p = pv.Plotter()
+p.add_mesh(ADJstl, color="grey", opacity=1)
+p.window_size = 2400, 2400
+p.show(screenshot=sample+"   Image4.tiff", window_size=[2400,2400])
+```
+![](content/D1_C1_adj.gif)
+
+
+By default the cell wall is just the adjacent cells + the airspace
+
+```python 
+CWstl=ADJstl+AIRstl
+```
+The above creates the 3D geometry, now the goal is the quantify the distances. In the paper I do it from the raw images but for the visuliations I used the 3D objects- there is no real difference. Here is a breif background on the method 
+The images were converted to surfaces and a k-dimensional tree (k-d-tree) was used to calculate the nearest neighbour distance . A k-d-tree is a data frame where every leaf node (in the case of this study the organelle surfaces, Figure 2a) is a k-dimensional point. The algorithm sub-sets the data, creates a query point (in the case of this study a voxel on the surface of an organelle, e.g. a mitochondria). This is then coupled with a nearest neighbour search which will find a point closet to the query point (in the case of this study a voxel on the surface of another anatomical feature e.g. a chloroplast or the airspace.
+
+I used the "Pyvista" package - the examples are fantastic https://docs.pyvista.org/examples/01-filter/distance-between-surfaces.html
+
+I start by getting the distance from the mitonchdira surface to the chlroplasts 
+
+```python 
+tree = KDTree(CHLstl.points)
+d, idx = tree.query(MITstl1.points )
+MITstl1["Distance (um)"] = d
+```
+Now we want to save each voxels distance data in a CSV
+
+```python 
+print("saving each points differences in nm")
+np.savetxt(sample+"Mit-CHL.csv", d, delimiter=",")
+```
+And create a dataframe with the distances 
+
+```python 
+chldistances=MITstl1
+```
+For the distance plots we need a scale bar
+
+```python 
+sargs = dict(
+    title_font_size=80,
+    label_font_size=80,
+    shadow=True,
+    n_labels=5,
+    italic=True,
+    fmt="%.1f",
+    font_family="arial",height=0.5, 
+    vertical=True, 
+    position_x=0.1,
+    position_y=0.8
+)
+
+boring_cmap = plt.cm.get_cmap("jet", 50) #somebody called this scale bar boring -- I dont think so but for some reason I 
+# kept that name 
+```
+
+```python 
+print(sample + "The Distance from mit to chl")
+pv.set_plot_theme("document")
+p = pv.Plotter()
+p.set_background("white")
+p.add_mesh(chldistances, scalars="Distance (um)",scalar_bar_args=sargs, cmap=boring_cmap )
+p.window_size = 500, 500
+p.show(screenshot=sample+"   Image6a.tiff", window_size=[2400,2400])
+```
+![](content/D1_C1_chlmit.gif)
+
+We now calculate the distance from the Mit to the CW
+
+```python 
+tree2 = KDTree(CWstl.points)
+d2, idx = tree2.query(MITstl2.points )
+MITstl2["Distance (um)"] = d2
+```
+```python 
+np.savetxt(sample+"Mit-CW.csv", d2, delimiter=",")
+```
+```python 
+cwdistances=MITstl2
+```
+```python 
+print(sample + "The Distance from mit to cw")
+pv.set_plot_theme("document")
+p = pv.Plotter()
+p.set_background("white")
+p.add_mesh(cwdistances, scalars="Distance (um)",scalar_bar_args=sargs, cmap=boring_cmap )
+#p.add_mesh(chldistances, scalars="Distance (um)" )
+#p.add_mesh(CHLstl, color="green", opacity=0.1)
+p.window_size = 500, 500
+p.show(screenshot=sample+"   Image7.tiff", window_size=[2400,2400])
+```
+![](content/D1_C1_cwmit.gif)
+
+We now calculate the distance from the Mit to the Airspace
+```python
+tree3 = KDTree(AIRstl.points)
+d3, idx = tree3.query(MITstl3.points )
+MITstl3["Distance (um)"] = d3
+```
+```python 
+np.savetxt(sample+"Mit-AIR.csv", d3, delimiter=",")
+```
+```python 
+airdistances=MITstl3
+```
+```python 
+pv.set_plot_theme("document")
+p = pv.Plotter()
+p.set_background("white")
+p.add_mesh(airdistances, scalars="Distance (um)",scalar_bar_args=sargs, cmap=boring_cmap )
+#p.add_mesh(AIRstl, color="grey", opacity=0.1)
+p.window_size = 500, 500
+p.show(screenshot=sample+"   Image8.tiff", window_size=[2400,2400])
+````
+![](content/D1_C1_airmit.gif)
+
+Now for each mitochdnria surface we have 3 Values 
+1) distance to nearest chl
+2) distance to neartest airsapce
+3) dietsance to nearest cell wall
+The last piece of info we want is the distance from the CHL surfaces to the airsapce
+
+```python 
+tree4 = KDTree(AIRstl.points)
+d4, idx = tree4.query(CHLstl.points )
+CHLstl["Distance (um)"] = d4
+```
+
+```python 
+np.savetxt(sample+"CHL-AIR.csv", d4, delimiter=",")
+```
+```python 
+SC=CHLstl
+```
+```python 
+print(sample + "The Distance from chl to air")
+pv.set_plot_theme("document")
+p = pv.Plotter()
+p.set_background("white")
+p.add_mesh(SC, scalars="Distance (um)",scalar_bar_args=sargs, cmap=boring_cmap )
+p.window_size = 500, 500
+p.show(screenshot=sample+"   Image9a.tiff", window_size=[2400,2400])
+```
+![](content/D1_C1_SC.gif)
+
+Lastly this code is really asy to alter to create movies or gifs
+
+```python 
+#MIT Movie
+plotter = pv.Plotter()
+plotter.add_mesh(MITstl, color="red")
+path = plotter.generate_orbital_path(n_points=200, shift=chldistances.length)
+plotter.add_text("Mitochondria", font_size=8)
+plotter.window_size = 240, 240
+plotter.open_gif(sample+'MIT.gif')
+plotter.orbit_on_path(path, write_frames=True)
+plotter.close()
+video2=VideoFileClip(sample+"MIT.gif")
+```
+
+
+
