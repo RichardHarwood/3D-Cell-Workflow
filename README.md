@@ -261,7 +261,7 @@ p.add_mesh(chldistances, scalars="Distance (um)",scalar_bar_args=sargs, cmap=bor
 p.window_size = 500, 500
 p.show(screenshot=sample+"   Image6a.tiff", window_size=[2400,2400])
 ```
-![](content/D1_C1_chlmit.gif)
+![](content/D1_C1_chlmitgit.gif)
 
 We now calculate the distance from the Mit to the CW
 
@@ -310,7 +310,7 @@ p.add_mesh(airdistances, scalars="Distance (um)",scalar_bar_args=sargs, cmap=bor
 p.window_size = 500, 500
 p.show(screenshot=sample+"   Image8.tiff", window_size=[2400,2400])
 ````
-![](content/D1_C1_airmit.gif)
+![](content/D1_C1_airmitgit.gif)
 
 Now for each mitochdnria surface we have 3 Values 
 1) distance to nearest chl
@@ -339,7 +339,7 @@ p.add_mesh(SC, scalars="Distance (um)",scalar_bar_args=sargs, cmap=boring_cmap )
 p.window_size = 500, 500
 p.show(screenshot=sample+"   Image9a.tiff", window_size=[2400,2400])
 ```
-![](content/D1_C1_SC.gif)
+![](content/D1_C1_SCgit.gif)
 
 Lastly this code is really asy to alter to create movies or gifs
 
