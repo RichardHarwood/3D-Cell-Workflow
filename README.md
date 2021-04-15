@@ -86,10 +86,11 @@ Y=0.04
 Z=0.1
 ```
 
-The above images are binary- a voxel is an organelle or tissue or it is not. The folowing code creates a 3D mesh. H This runs the "marching cubes" algorithim which "extracts a polygonal mesh of an isosurface from a three-dimensional discrete scalar field (sometimes called a voxel). 
+The above images are binary- a voxel is an organelle or tissue or it is not. The following code creates a 3D mesh. H This runs the "marching cubes" algorithm which "extracts a polygonal mesh of an isosurface from a three-dimensional discrete scalar field (sometimes called a voxel). 
 Here are the resources I used https://en.wikipedia.org/wiki/Marching_cubes https://scikit-image.org/docs/dev/auto_examples/edges/plot_marching_cubes.html
 
 Create the mesh:
+
 
 ```python 
 vertices, faces, normals, values = marching_cubes_lewiner(chl, level=None,
