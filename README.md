@@ -1,11 +1,11 @@
 
 # This notebook will outline a few really cool image analysis and image visualiation techniques in Python
 
-Firstly I will show how to automate visuliations
-I think this apporach is really cool because it creates STLS from the image stacks then renders these - for me this means endless possiblities (e.g. VR - 3D printing)
+Firstly, I will show how to automate visualisations
+I think this approach is really cool because it creates STLS from the image stacks then renders these - for me this means endless possibilities (e.g. VR - 3D printing)
 Here is how you make a STL from an image stack
-Its likely that not all the code is useful so to save this been a huge document chunks can be displayed by hitting toggle code
-Load Packages
+Load Packages:
+
 
 ```python 
 In [1]:
@@ -61,7 +61,7 @@ output ="F:/Organelle Distances/Python Output/"
 image_dir = "z:/ALLTIFS3DMIT/"
 sample="D1_C1_"
 ```
-Next we bring in the images and reduce them - reducing them is optional and I dont for any quanitativite output. But when I am working on data vis pipelines I like working with small(ish) arrays
+Next, we bring in the images and reduce them - reducing them is optional and I don’t for any quantitative output. But when I am working on data vis pipelines I like working with small(ish) arrays
 
 ```python 
 chl_name='D1C1CHL.tif';mit_name='D1C1MIT.tif';cell_w_org_name="D1C1VAC.tif"
@@ -76,8 +76,9 @@ air=zoom(air, (0.5, 0.5, 0.5)) #This is the same as Image > adjust >size in FIJI
 adj = io.imread(image_dir + adj_name)
 adj=zoom(adj, (0.5, 0.5, 0.5)) #This is the same as Image > adjust >size in FIJI
 ```
-zoom is just the same as adjust size in ImageJ. Our initial voxel size for these e.g. images was 6nm, 6nm 50nm. But before segmenting I reduced them to 20nm,20nm 50nm. At this stage I was using a core facility computer. For this analysis I reduce them to 40nm, 40nm, 100nm.
+“zoom” is just the same as adjust size in ImageJ. Our initial voxel size for these e.g. images was 6nm, 6nm 50nm. But before segmenting I reduced them to 20nm,20nm 50nm. At this stage I was using a core facility computer. For this analysis I reduce them to 40nm, 40nm, 100nm.
 Define voxel values in um
+
 
 ```python 
 X=0.04
@@ -88,7 +89,7 @@ Z=0.1
 The above images are binary- a voxel is an organelle or tissue or it is not. The folowing code creates a 3D mesh. H This runs the "marching cubes" algorithim which "extracts a polygonal mesh of an isosurface from a three-dimensional discrete scalar field (sometimes called a voxel). 
 Here are the resources I used https://en.wikipedia.org/wiki/Marching_cubes https://scikit-image.org/docs/dev/auto_examples/edges/plot_marching_cubes.html
 
-Create the mesh
+Create the mesh:
 
 ```python 
 vertices, faces, normals, values = marching_cubes_lewiner(chl, level=None,
@@ -109,7 +110,8 @@ and then read it in again
 CHLstl = pv.read(output+sample +"chl3D.stl")
 ```
 
-Now we can see the chloroplasts in 3D - Note that the a HQ image is saved but i am showing GIFs here cause they are nicer :) the code to make the gifs is at the end of the readme 
+Now we can see the chloroplasts in 3D - Note that the a HQ image is saved but I am showing GIFs here cause they are nicer :) the code to make the gifs is at the end of the readme
+
 ```python
 pv.set_plot_theme("document")
 p = pv.Plotter()
@@ -143,7 +145,9 @@ p.show(screenshot=sample+"   Image2.tiff", window_size=[2400,2400])
 ```
 ![](content/D1_C1_MIT.gif)
 
-Because later I am going to get distance metrics for multiple things in regards to mitochdnria (the distance data is added to the array) I create some duplicates 
+
+Because later I am going to get distance metrics for multiple things in regard to mitochondria (the distance data is added to the array) I create some duplicates
+
 
 ```python 
 MITstl1=MITstl
@@ -209,12 +213,13 @@ By default the cell wall is just the adjacent cells + the airspace
 ```python 
 CWstl=ADJstl+AIRstl
 ```
-The above creates the 3D geometry, now the goal is the quantify the distances. In the paper I do it from the raw images but for the visuliations I used the 3D objects- there is no real difference. Here is a breif background on the method 
-The images were converted to surfaces and a k-dimensional tree (k-d-tree) was used to calculate the nearest neighbour distance . A k-d-tree is a data frame where every leaf node (in the case of this study the organelle surfaces, Figure 2a) is a k-dimensional point. The algorithm sub-sets the data, creates a query point (in the case of this study a voxel on the surface of an organelle, e.g. a mitochondria). This is then coupled with a nearest neighbour search which will find a point closet to the query point (in the case of this study a voxel on the surface of another anatomical feature e.g. a chloroplast or the airspace.
+The above creates the 3D geometry, now the goal is the quantify the distances. In the paper I do it from the raw images but for the visualisations I used the 3D objects- there is no real difference. Here is a brief background on the method 
+The images were converted to surfaces and a k-dimensional tree (k-d-tree) was used to calculate the nearest neighbour distance. A k-d-tree is a data frame where every leaf node (in the case of this study the organelle surfaces, Figure 2a) is a k-dimensional point. The algorithm sub-sets the data, creates a query point (in the case of this study a voxel on the surface of an organelle, e.g. a mitochondria). This is then coupled with a nearest neighbour search which will find a point closet to the query point (in the case of this study a voxel on the surface of another anatomical feature e.g. a chloroplast or the airspace.
 
 I used the "Pyvista" package - the examples are fantastic https://docs.pyvista.org/examples/01-filter/distance-between-surfaces.html
 
-I start by getting the distance from the mitonchdira surface to the chlroplasts 
+I start by getting the distance from the mitochondria surface to the chloroplasts
+
 
 ```python 
 tree = KDTree(CHLstl.points)
@@ -312,11 +317,11 @@ p.show(screenshot=sample+"   Image8.tiff", window_size=[2400,2400])
 ````
 ![](content/D1_C1_airmitgit.gif)
 
-Now for each mitochdnria surface we have 3 Values 
+Now for each mitochondria surface we have 3 Values 
 1) distance to nearest chl
-2) distance to neartest airsapce
-3) dietsance to nearest cell wall
-The last piece of info we want is the distance from the CHL surfaces to the airsapce
+2) distance to nearest airspace
+3) distance to nearest cell wall
+The last piece of info we want is the distance from the CHL surfaces to the airspace
 
 ```python 
 tree4 = KDTree(AIRstl.points)
